@@ -59,14 +59,15 @@ jobs:
         run: echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 tfplan
       - name: Compress release binaries
         id: compress
-        uses: a7ul/tar-action@v1.1.0
+        if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
+        uses: a7ul/tar-action@v1
         with:
           command: c
           cwd: ${{ github.workspace }}
           files: bin/
           outPath: bins.tar.gz
-      - name: Upload plan as release asset
-        if: always() && steps.reformat_plan.outcome != 'cancelled' && steps.reformat_plan.outcome != 'skipped'
+      - name: Upload release assets
+        if: always() && steps.reformat_plan.outcome != 'cancelled' && steps.reformat_plan.outcome != 'skipped' && steps.compress.outcome != 'cancelled' && steps.compress.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload ${{ github.event.release.tag_name }} bins.tar.gz tfplan.gpg terraform_plan.txt --clobber
@@ -97,7 +98,7 @@ jobs:
         run: gh release download "$TAG_NAME" -p tfplan.gpg -p bins.tar.gz
       - name: Extract release binaries
         id: extract
-        uses: a7ul/tar-action@v1.1.0
+        uses: a7ul/tar-action@v1
         with:
           command: x
           cwd: ../
