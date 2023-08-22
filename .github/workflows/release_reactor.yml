@@ -70,7 +70,7 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          go-version-file: ../go.mod
+          go-version-file: go.mod
       - id: download_plan
         env:
           GH_TOKEN: ${{ github.token }}
