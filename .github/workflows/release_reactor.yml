@@ -46,6 +46,12 @@ jobs:
         id: reformat_plan
         if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
         run: terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > terraform_plan.txt
+      - run: |
+          echo PWD is $PWD
+          echo ls ../
+          ls ../
+          echo ls .
+          ls .
       - name: Encrypt plan
         id: encrypt_plan
         env:
