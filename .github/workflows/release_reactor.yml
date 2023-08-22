@@ -101,8 +101,8 @@ jobs:
         uses: a7ul/tar-action@v1.1.3
         with:
           command: x
-          cwd: ../
-          files: bins.tar.gz
+          cwd: ${{ github.workspace }}
+          files: ${{ github.workspace }}/terraform/bins.tar.gz
       - id: decrypt_plan
         if: always() && steps.download_plan.outcome != 'skipped' && steps.download_plan.outcome != 'cancelled'
         env:
