@@ -1,0 +1,38 @@
+name: Deploy to Production
+
+on:
+  release:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  do_stuff:
+    name: Do Stuff
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ github.event.release }}
+
+  plan_terraform:
+    runs-on: ubuntu-latest
+    if: always()
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - run: terraform init
+      - id: plan
+        if: always() && github.event.release.prerelease
+        env:
+          TV_VAR_release_identifier: ${{ github.event.release.tag_name }}
+        run: terraform plan -input=false -no-color -out=tfplan && terraform show -no-color tfplan
+      - name: Save plaintext plan
+        id: save_plan
+        if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
+        run: terraform show -no-color tfplan > plan.txt
+      - name: Upload plan as release asset
+        if: always() && steps.save_plan.outcome != 'cancelled' && steps.save_plan.outcome != 'skipped'
+        run: gh release upload ${{ github.event.release.tag_name }} plan.txt --clobber
