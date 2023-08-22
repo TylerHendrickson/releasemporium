@@ -70,7 +70,7 @@ jobs:
         if: always() && steps.reformat_plan.outcome != 'cancelled' && steps.reformat_plan.outcome != 'skipped' && steps.compress.outcome != 'cancelled' && steps.compress.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.event.release.tag_name }} bins.tar.gz tfplan.gpg terraform_plan.txt --clobber
+        run: gh release upload ${{ github.event.release.tag_name }} ../bins.tar.gz tfplan.gpg terraform_plan.txt --clobber
       - if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
         run: md5sum ../bin/* && md5sum builds/*
 
