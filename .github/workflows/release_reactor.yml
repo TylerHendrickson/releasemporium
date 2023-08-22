@@ -36,13 +36,19 @@ jobs:
         if: always() && github.event.release.prerelease
         env:
           TF_VAR_release_identifier: ${{ github.event.release.tag_name }}
-        run: terraform plan -input=false -no-color -out=tfplan
-      - name: Save plaintext plan
-        id: save_plan
+        run: terraform plan -input=false -no-color -out=tfplan && terraform show -no-color tfplan
+      - name: Reformat Plan
+        id: reformat_plan
         if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
-        run: terraform show -no-color tfplan > plan.txt
+        run: |
+          echo '${{ steps.plan.outputs.stdout || steps.plan.outputs.stderr }}' \
+            | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
+          PLAN=$(cat plan.txt | head -c 65300) # Observe GitHub's 65535 character limit
+          echo "PLAN<<EOF" >> $GITHUB_ENV
+          echo "$PLAN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Upload plan as release asset
-        if: always() && steps.save_plan.outcome != 'cancelled' && steps.save_plan.outcome != 'skipped'
+        if: always() && steps.reformat_plan.outcome != 'cancelled' && steps.reformat_plan.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload ${{ github.event.release.tag_name }} plan.txt --clobber
