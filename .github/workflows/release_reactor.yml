@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
+          GITHUB_CONTEXT: ${{ toJson(github.event.release) }}
         run: echo $GITHUB_CONTEXT
 
   plan_terraform:
@@ -37,4 +37,6 @@ jobs:
         run: terraform show -no-color tfplan > plan.txt
       - name: Upload plan as release asset
         if: always() && steps.save_plan.outcome != 'cancelled' && steps.save_plan.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: gh release upload ${{ github.event.release.tag_name }} plan.txt --clobber
