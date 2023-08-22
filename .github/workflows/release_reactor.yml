@@ -80,6 +80,10 @@ jobs:
       #   with:
       #     token: ${{ secrets.GITHUB_TOKEN }}
       #     go-version-file: go.mod
+      - run: |
+          echo $PWD
+          ls ../
+          ls .
       - id: download_assets
         env:
           GH_TOKEN: ${{ github.token }}
