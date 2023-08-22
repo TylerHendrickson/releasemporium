@@ -51,11 +51,19 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
         run: echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 tfplan
+      - name: Compress release binaries
+        id: compress
+        uses: a7ul/tar-action@v1.1.0
+        with:
+          command: c
+          cwd: ../
+          files: bin/
+          outPath: bins.tar.gz
       - name: Upload plan as release asset
         if: always() && steps.reformat_plan.outcome != 'cancelled' && steps.reformat_plan.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.event.release.tag_name }} tfplan.gpg terraform_plan.txt --clobber
+        run: gh release upload ${{ github.event.release.tag_name }} bins.tar.gz tfplan.gpg terraform_plan.txt --clobber
       - if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
         run: md5sum ../bin/* && md5sum builds/*
 
@@ -68,15 +76,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
-      - uses: actions/setup-go@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          go-version-file: go.mod
-      - id: download_plan
+      # - uses: actions/setup-go@v4
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     go-version-file: go.mod
+      - id: download_assets
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.event.release.tag_name }}
-        run: gh release download "$TAG_NAME" -p tfplan.gpg
+        run: gh release download "$TAG_NAME" -p tfplan.gpg -p bins.tar.gz
+      - name: Extract release binaries
+        id: extract
+        uses: a7ul/tar-action@v1.1.0
+        with:
+          command: x
+          cwd: ../
+          files: bins.tar.gz
       - id: decrypt_plan
         if: always() && steps.download_plan.outcome != 'skipped' && steps.download_plan.outcome != 'cancelled'
         env:
