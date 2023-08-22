@@ -24,13 +24,17 @@ jobs:
 
   plan_terraform:
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && github.event.release.prerelease
     defaults:
       run:
         working-directory: terraform
     steps:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
+      - uses: actions/setup-go@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          go-version-file: ../go.mod
       - run: terraform init
       - id: plan
         if: always() && github.event.release.prerelease
@@ -40,15 +44,46 @@ jobs:
       - name: Reformat Plan
         id: reformat_plan
         if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
-        run: |
-          echo '${{ steps.plan.outputs.stdout || steps.plan.outputs.stderr }}' \
-            | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
-          PLAN=$(cat plan.txt | head -c 65300) # Observe GitHub's 65535 character limit
-          echo "PLAN<<EOF" >> $GITHUB_ENV
-          echo "$PLAN" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+        run: terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > terraform_plan.txt
+      - name: Encrypt plan
+        id: encrypt_plan
+        env:
+          GPG_PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
+        run: echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 tfplan
       - name: Upload plan as release asset
         if: always() && steps.reformat_plan.outcome != 'cancelled' && steps.reformat_plan.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.event.release.tag_name }} plan.txt --clobber
+        run: gh release upload ${{ github.event.release.tag_name }} tfplan.gpg terraform_plan.txt --clobber
+      - if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
+        run: md5sum ../bin/* && md5sum builds/*
+
+  apply_terraform:
+    runs-on: ubuntu-latest
+    if: always() && !github.event.release.prerelease
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - uses: actions/setup-go@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          go-version-file: ../go.mod
+      - id: download_plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: gh release download "$TAG_NAME" -p tfplan.gpg
+      - id: decrypt_plan
+        if: always() && steps.download_plan.outcome != 'skipped' && steps.download_plan.outcome != 'cancelled'
+        env:
+          GPG_PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output tfplan tfplan.gpg
+      - run: terraform init
+      - id: apply
+        if: always() && steps.decrypt_plan.outcome != 'cancelled' && steps.decrypt_plan.outcome != 'skipped'
+        run: terraform apply tfplan
+      - if: always() && steps.apply.outcome != 'cancelled' && steps.apply.outcome != 'skipped'
+        run: md5sum ../bin/* && md5sum builds/*
