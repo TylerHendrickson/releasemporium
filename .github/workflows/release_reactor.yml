@@ -14,7 +14,7 @@ jobs:
     steps:
       - env:
           GITHUB_CONTEXT: ${{ toJson(github.event.release) }}
-        run: echo $GITHUB_CONTEXT
+        run: echo $GITHUB_CONTEXT | jq .
 
   plan_terraform:
     runs-on: ubuntu-latest
