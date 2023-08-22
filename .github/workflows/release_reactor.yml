@@ -12,7 +12,9 @@ jobs:
     name: Do Stuff
     runs-on: ubuntu-latest
     steps:
-      - run: echo ${{ github.event.release }}
+      - env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo $GITHUB_CONTEXT
 
   plan_terraform:
     runs-on: ubuntu-latest
@@ -27,7 +29,7 @@ jobs:
       - id: plan
         if: always() && github.event.release.prerelease
         env:
-          TV_VAR_release_identifier: ${{ github.event.release.tag_name }}
+          TF_VAR_release_identifier: ${{ github.event.release.tag_name }}
         run: terraform plan -input=false -no-color -out=tfplan && terraform show -no-color tfplan
       - name: Save plaintext plan
         id: save_plan
