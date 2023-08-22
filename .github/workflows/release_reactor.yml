@@ -2,6 +2,9 @@ name: React to Releases
 
 on:
   release:
+    types:
+      - created
+      - edited
 
 permissions:
   contents: write
