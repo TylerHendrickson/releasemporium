@@ -62,7 +62,7 @@ jobs:
         uses: a7ul/tar-action@v1.1.0
         with:
           command: c
-          cwd: ../
+          cwd: ${{ github.workspace }}
           files: bin/
           outPath: bins.tar.gz
       - name: Upload plan as release asset
