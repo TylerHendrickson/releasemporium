@@ -36,10 +36,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           go-version-file: go.mod
-      - run: |
-          echo $PWD
-          ls ../
-          ls .
       - run: terraform init
       - id: plan
         if: always() && github.event.release.prerelease
