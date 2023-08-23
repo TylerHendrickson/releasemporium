@@ -54,7 +54,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: terraform-${{ github.sha }}
-          path: ${{ github.workspace }}/terraform
+          path: |
+            ${{ github.workspace }}/terraform
+            !${{ github.workspace }}/terraform/.terraform
       - name: Store executable artifacts
         uses: actions/upload-artifact@v3
         with:
