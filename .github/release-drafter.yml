@@ -73,7 +73,7 @@ version-resolver:
 template: |
   # Summary
 
-  The releaser should remove this section or provide a high-level summary here.
+  The releaser should provide a high-level summary here (or remove this section).
 
   # 🛠️ Changes
 
