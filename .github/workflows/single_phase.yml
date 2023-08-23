@@ -46,7 +46,7 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
         run: echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 tfplan
-      - run: rm tfstate
+      - run: rm tfplan
       - name: Store terraform artifacts
         uses: actions/upload-artifact@v3
         with:
