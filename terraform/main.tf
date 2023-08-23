@@ -24,3 +24,7 @@ data "archive_file" "local_zip" {
 output "pet" {
   value = random_pet.default.id
 }
+
+output "something" {
+  value = "Always stays the same"
+}
