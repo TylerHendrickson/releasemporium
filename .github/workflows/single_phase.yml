@@ -9,21 +9,17 @@ permissions:
   contents: write
   id-token: write
 
-jobs:
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          GITHUB_CONTEXT: ${{ toJson(github.event) }}
-        run: echo $GITHUB_CONTEXT | jq .
+concurrency: production
 
-  plan_release:
+jobs:
+  plan:
+    name: Plan Deployment
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: terraform
     outputs:
-      plan_result: ${{ steps.plan.outputs.exitcode }}
+      plan_exitcode: ${{ steps.plan.outputs.exitcode }}
     steps:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
@@ -33,23 +29,18 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           go-version-file: go.mod
-      - run: terraform init
-      - id: plan
-        if: always()
+      - name: Terraform Init
+        run: terraform init
+      - name: Terraform Plan
         env:
           TF_VAR_release_identifier: ${{ github.ref_name }}
         run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
-      - run: echo "Plan exit code was ${{ steps.plan.outputs.exitcode }}"
-      - name: Reformat Plan
-        id: reformat_plan
-        if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
-        run: terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > terraform_plan.txt
-      - name: Encrypt plan
-        id: encrypt_plan
+      - name: Encrypt terraform plan file
         env:
-          GPG_PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
-        run: echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 tfplan
-      - run: rm tfplan
+          PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
+        run: |
+          echo "$PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 -c --cipher-algo AES256 tfplan
+          rm tfplan
       - name: Store terraform artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -62,53 +53,74 @@ jobs:
         with:
           name: bin-${{ github.sha }}
           path: ${{ github.workspace }}/bin
+      - name: Write the step summary
+        run: |
+          terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
+          PLAN=$(cat plan.txt | head -c 65300)
+          echo "PLAN<<EOF" >> $GITHUB_ENV
+          echo "$PLAN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          REPORT_FILE=$(mktemp -t summary.md.XXXXX )
+          echo "REPORT_FILE=$REPORT_FILE" >> $GITHUB_ENV
+          cat >> $REPORT_FILE << 'ENDOFREPORT'
+          ## Terraform Plan Result
 
-  deploy_release:
+          <details>
+          <summary>Output</summary>
+
+          ```diff
+          ${{ env.PLAN }}
+          ```
+
+          </details>
+          ENDOFREPORT
+          cat $REPORT_FILE >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    name: Deploy to Production
     runs-on: ubuntu-latest
     environment: production
     needs:
-      - plan_release
-    if: needs.plan_release.outputs.plan_result == 2
+      - plan
+    if: always() && needs.plan.outputs.plan_exitcode == 2
     defaults:
       run:
         working-directory: terraform
     steps:
       - uses: hashicorp/setup-terraform@v2
       - name: Restore terraform artifacts
-        id: restore_terraform
         uses: actions/download-artifact@v3
         with:
           name: terraform-${{ github.sha }}
           path: ${{ github.workspace }}/terraform
-      - run: terraform init
-      - run: echo "Working directory is $PWD"
-      - name: Show contents
-        run: ls -lahR
       - name: Restore executable artifacts
-        id: restore_executables
         uses: actions/download-artifact@v3
         with:
           name: bin-${{ github.sha }}
           path: ${{ github.workspace }}/bin
-      - id: decrypt_plan
-        if: always() && steps.restore_terraform.outcome != 'skipped' && steps.restore_terraform.outcome != 'cancelled'
+      - name: Decrypt terraform plan file
         env:
           GPG_PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
-        run: gpg --quiet --batch --yes --decrypt --passphrase="$GPG_PASSPHRASE" --output tfplan tfplan.gpg
-      - run: rm tfplan.gpg
-      - id: apply
-        if: always() && steps.decrypt_plan.outcome != 'cancelled' && steps.decrypt_plan.outcome != 'skipped'
+        run: echo "$GPG_PASSPHRASE" | gpg -qd --batch --yes --passphrase-fd 0 -o tfplan tfplan.gpg
+      - name: Terraform Init
+        run: terraform init
+      - name: Terraform Apply
         run: terraform apply tfplan
 
   update_release:
+    name: Update release notes
     runs-on: ubuntu-latest
     needs:
-      - deploy_release
+      - deploy
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v3
-      - run: gh release view $RELEASE_TAG --json body --jq .body > release_notes.md
-      - run: printf "\n\nSuccessfully deployed at $(date --iso-8601=seconds)\n" >> release_notes.md
-      - run: gh release edit $RELEASE_TAG --draft=false --prerelease=false --latest --verify-tag --notes-file release_notes.md
+      - id: get
+        continue-on-error: true
+        run: gh release view $RELEASE_TAG --json body --jq .body > release_notes.md
+      - if: always() && steps.get.outcome == 'success'
+        run: printf "\n\nSuccessfully deployed at $(date --iso-8601=seconds)\n" >> release_notes.md
+      - if: always() && steps.get.outcome == 'success'
+        run: gh release edit $RELEASE_TAG --draft=false --prerelease=false --latest --verify-tag -F release_notes.md
