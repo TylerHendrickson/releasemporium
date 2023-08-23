@@ -1,6 +1,6 @@
-name-template: '$RESOLVED_VERSION'
+name-template: 'v$RESOLVED_VERSION'
 tag-template: 'release/$RESOLVED_VERSION'
-version-template: '$MAJOR.$MINOR'
+version-template: '2023.$MINOR'
 # version-resolver:
 #   default: minor
 categories:
