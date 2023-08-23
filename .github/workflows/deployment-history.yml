@@ -13,7 +13,7 @@ env:
 
 jobs:
   on_success:
-    if: always() && github.event.deployment_status.environment == 'success'
+    if: always() && github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
