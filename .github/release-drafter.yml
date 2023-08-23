@@ -68,7 +68,7 @@ autolabeler:
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 template: |
-  ## Summary
+  ## 📚 Summary
 
   The releaser should provide a high-level summary here (or remove this section).
 
