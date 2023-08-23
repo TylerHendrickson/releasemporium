@@ -37,7 +37,7 @@ jobs:
         env:
           TF_VAR_release_identifier: ${{ env.GITHUB_REF }}
         run: terraform plan -input=false -no-color -out=tfplan && terraform show -no-color tfplan
-      - run: "Plan exit code: ${{ steps.plan.outputs.exitcode }}"
+      - run: echo "Plan exit code was ${{ steps.plan.outputs.exitcode }}"
       - name: Reformat Plan
         id: reformat_plan
         if: always() && steps.plan.outcome != 'cancelled' && steps.plan.outcome != 'skipped'
