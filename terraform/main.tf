@@ -26,5 +26,5 @@ output "pet" {
 }
 
 output "something" {
-  value = "Always the same"
+  value = "Always the same."
 }
