@@ -36,9 +36,13 @@ jobs:
         env:
           TF_VAR_release_identifier: ${{ github.ref_name }}
         run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
+      - name: Generate plaintext plan
+        id: show_plan
+        run: terraform show -no-color tfplan
       - name: Reformat Plan
         run: |
-          terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
+          echo '${{ steps.show_plan.outputs.stdout || steps.show_plan.outputs.stderr }}' \
+            | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
           PLAN=$(cat plan.txt | head -c 65300)
           echo "PLAN<<EOF" >> $GITHUB_ENV
           echo "$PLAN" >> $GITHUB_ENV
