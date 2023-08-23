@@ -111,4 +111,4 @@ jobs:
       - uses: actions/checkout@v3
       - run: gh release view $RELEASE_TAG --json body --jq .body > release_notes.md
       - run: printf "\n\nSuccessfully deployed at $(date --iso-8601=seconds)\n" >> release_notes.md
-      - run: gh release edit $RELEASE_TAG --latest --verify-tag -notes-file release_notes.md
+      - run: gh release edit $RELEASE_TAG --latest --verify-tag --notes-file release_notes.md
