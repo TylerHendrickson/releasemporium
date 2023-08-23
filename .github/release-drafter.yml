@@ -1,17 +1,22 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'release/$RESOLVED_VERSION'
 version-template: '2023.$MINOR'
-version-resolver:
-  major:
-    labels:
-      - major
-  minor:
-    labels:
-      - minor
-  patch:
-    labels:
-      - patch
-  default: patch
+version-resolver: {
+    major: { labels: [] },
+    minor: { labels: [] },
+    patch: { labels: [] },
+    default: 'patch',
+  }
+  # major:
+  #   labels:
+  #     - major
+  # minor:
+  #   labels:
+  #     - minor
+  # patch:
+  #   labels:
+  #     - patch
+  # default: patch
 categories:
   - title: 🚀 New features and enhancements
     collapse-after: 10
