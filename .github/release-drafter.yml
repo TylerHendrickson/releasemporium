@@ -1,8 +1,9 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/release-drafter/release-drafter/ff929b5ceb21bf2646a216e916f9a8bb507d48a3/schema.json
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'release/$RESOLVED_VERSION'
-# version-template: '2023.$MINOR'
-"version-resolver":
-    default: 'patch'
+version-template: '2023.$MINOR'
+version-resolver:
+  default: patch
 categories:
   - title: 🚀 New features and enhancements
     collapse-after: 10
@@ -65,17 +66,6 @@ autolabeler:
       - '/\benhance(s|ment)?\b/i'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
-version-resolver:
-  major:
-    labels:
-      - 'major'
-  minor:
-    labels:
-      - 'minor'
-  patch:
-    labels:
-      - 'patch'
-  default: patch
 template: |
   # Summary
 
