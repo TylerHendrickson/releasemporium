@@ -4,6 +4,7 @@ tag-template: 'release/$RESOLVED_VERSION'
 version-template: '2023.$MINOR'
 version-resolver:
   default: patch
+prerelease: true
 categories:
   - title: 🚀 New features and enhancements
     collapse-after: 10
@@ -67,16 +68,18 @@ autolabeler:
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 template: |
-  # Summary
+  ## Summary
 
   The releaser should provide a high-level summary here (or remove this section).
 
-  # 🛠️ Changes
+  ## 🛠️ Changes
 
   $CHANGES
 
-  # 🤝 Contributors
+  ## 🤝 Contributors
 
   We would like to thank the following people who made this release possible:
 
   $CONTRIBUTORS
+
+  ## Deployment History
