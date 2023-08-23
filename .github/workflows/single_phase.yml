@@ -78,6 +78,9 @@ jobs:
         with:
           name: terraform-${{ github.sha }}
           path: ${{ github.workspace }}/terraform
+      - run: echo "Working directory is $PWD"
+      - name: Show contents
+        run: ls -lahR
       - name: Restore executable artifacts
         id: restore_executables
         uses: actions/download-artifact@v3
