@@ -71,11 +71,15 @@ version-resolver:
       - 'patch'
   default: patch
 template: |
-  ## 🛠️ Changes
+  # Summary
+
+  The releaser should remove this section or provide a high-level summary here.
+
+  # 🛠️ Changes
 
   $CHANGES
 
-  ## 👏 Contributors
+  # 👏 Contributors
 
   We would like to thank the following people who made this release possible:
 
