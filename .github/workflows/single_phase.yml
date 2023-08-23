@@ -99,11 +99,6 @@ jobs:
       - id: apply
         if: always() && steps.decrypt_plan.outcome != 'cancelled' && steps.decrypt_plan.outcome != 'skipped'
         run: terraform apply tfplan
-      - name: Update release
-        if: always() && steps.apply.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release edit
 
   update_release:
     runs-on: ubuntu-latest
