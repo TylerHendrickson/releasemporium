@@ -1,5 +1,5 @@
-name-template: 'v$RESOLVED_VERSION 🌈'
-tag-template: 'v$RESOLVED_VERSION'
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
 categories:
   - title: 🚀 New features and enhancements
     labels:
@@ -11,23 +11,64 @@ categories:
     labels:
       - documentation
   - title: 🔧 Dependency updates
+    collapse-after: 3
     labels:
       - dependencies
   - title: Other Changes
     labels:
       - "*"
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
-change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+exclude-labels:
+  - skip-changelog
+autolabeler:
+  - label: go
+    files:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+  - label: terraform
+    files:
+      - "terraform/**"
+  - label: dependencies
+    files:
+      - go.mod
+      - go.sum
+      - "**/.terraform.lock.hcl"
+    branch:
+      - "/dependabot\/.+/"
+  - documentation:
+    files:
+      - README
+      - "**/doc/**"
+      - "**/docs/**"
+      - "**/*.md"
+    branch:
+      - "/docs?/"
+  - label: bug
+    branch:
+      - "/fix\/.+/"
+      - "/bug\/.+/"
+    title:
+      - "/\bfix(es)?\b/i"
+      - "/\bbug\b/i"
+  - label: enhancement
+    branch:
+      - "feat(ure)?\/.+/"
+      - "enhance(s|ment)?\/.+/"
+    title:
+      - "/\bfeat(ure)?\b/i"
+      - "/\benhance(s|ment)?\b/i"
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: "\<*_&" # You can add # and @ to disable mentions, and add ` to disable code blocks.
 version-resolver:
   major:
     labels:
-      - 'major'
+      - "major"
   minor:
     labels:
-      - 'minor'
+      - "minor"
   patch:
     labels:
-      - 'patch'
+      - "patch"
   default: patch
 template: |
   ## Changes
