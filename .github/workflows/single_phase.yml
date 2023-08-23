@@ -36,13 +36,15 @@ jobs:
         env:
           TF_VAR_release_identifier: ${{ github.ref_name }}
         run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
-      - name: Write the step summary
+      - name: Reformat Plan
         run: |
           terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
           PLAN=$(cat plan.txt | head -c 65300)
           echo "PLAN<<EOF" >> $GITHUB_ENV
           echo "$PLAN" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+      - name: Write the step summary
+        run: |
           REPORT_FILE=$(mktemp -t summary.md.XXXXX )
           echo "REPORT_FILE=$REPORT_FILE" >> $GITHUB_ENV
           cat >> $REPORT_FILE << 'ENDOFREPORT'
