@@ -3,9 +3,10 @@ name: React to Releases
 on:
   release:
     types:
-      - created
-      - edited
-      - released
+      # - created
+      # - edited
+      # - released
+      - unpublished
 
 permissions:
   contents: write
