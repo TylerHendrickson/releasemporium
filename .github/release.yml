@@ -1,7 +1,7 @@
 changelog:
   exclude:
     labels:
-      - ignore-for-release
+      - skip-changelog
   categories:
     - title: 🚀 New features and enhancements
       labels:
