@@ -1,6 +1,0 @@
-documentation:
-  - '**/*.md'
-go:
-  - '**/*.go'
-terraform:
-  - 'terraform/**'

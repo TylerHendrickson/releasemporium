@@ -1,0 +1,39 @@
+name: Track Release Deployment History
+
+on:
+  deployment_status
+
+permissions:
+  contents: write
+
+env:
+  DEPLOY_ENVIRONMENT: ${{ github.event.deployment_status.environment }}
+  DEPLOY_REF: ${{ github.event.deployment.ref }}
+  DEPLOY_MOMENT: ${{ github.event.deployment_status.updated_at }}
+
+jobs:
+  on_success:
+    if: always() && github.event.deployment_status.environment == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Log
+        run: echo "Successfully deployed $DEPLOY_REF to $DEPLOY_ENVIRONMENT at $DEPLOY_MOMENT"
+      # - uses: actions/checkout@v3
+      # - name: Get release notes
+      #   id: get
+      #   continue-on-error: true
+      #   run: gh release view $RELEASE_TAG --json body --jq .body > release_notes.md
+      # - name: Add deployment history to release notes
+      #   if: always() && steps.get.outcome == 'success'
+      #   run: printf "\n\n- Deployed at $(date --iso-8601=seconds)\n" >> release_notes.md
+      # - name: Update release notes and status
+      #   if: always() && steps.get.outcome == 'success'
+      #   run: gh release edit $RELEASE_TAG --draft=false --prerelease=false --latest --verify-tag -F release_notes.md
+
+  on_failure:
+    if: always() && github.event.deployment_status.state == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo failed
+
