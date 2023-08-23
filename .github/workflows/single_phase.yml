@@ -19,7 +19,7 @@ jobs:
       run:
         working-directory: terraform
     outputs:
-      plan_exitcode: ${{ steps.plan.outputs.exitcode }}
+      terraform_plan_exitcode: ${{ steps.terraform_plan.outputs.exitcode }}
     steps:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
@@ -32,27 +32,10 @@ jobs:
       - name: Terraform Init
         run: terraform init
       - name: Terraform Plan
+        id: terraform_plan
         env:
           TF_VAR_release_identifier: ${{ github.ref_name }}
         run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
-      - name: Encrypt terraform plan file
-        env:
-          PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
-        run: |
-          echo "$PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 -c --cipher-algo AES256 tfplan
-          rm tfplan
-      - name: Store terraform artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-${{ github.sha }}
-          path: |
-            ${{ github.workspace }}/terraform
-            !${{ github.workspace }}/terraform/.terraform
-      - name: Store executable artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: bin-${{ github.sha }}
-          path: ${{ github.workspace }}/bin
       - name: Write the step summary
         run: |
           terraform show -no-color tfplan | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
@@ -75,6 +58,24 @@ jobs:
           </details>
           ENDOFREPORT
           cat $REPORT_FILE >> $GITHUB_STEP_SUMMARY
+      - name: Encrypt terraform plan file
+        env:
+          PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
+        run: |
+          echo "$PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 -c --cipher-algo AES256 tfplan
+          rm tfplan
+      - name: Store terraform artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-${{ github.sha }}
+          path: |
+            ${{ github.workspace }}/terraform
+            !${{ github.workspace }}/terraform/.terraform
+      - name: Store executable artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ github.sha }}
+          path: ${{ github.workspace }}/bin
 
   deploy:
     name: Deploy to Production
@@ -82,7 +83,7 @@ jobs:
     environment: production
     needs:
       - plan
-    if: always() && needs.plan.outputs.plan_exitcode == 2
+    if: always() && needs.plan.outputs.terraform_plan_exitcode == 2
     defaults:
       run:
         working-directory: terraform
