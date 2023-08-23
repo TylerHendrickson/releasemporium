@@ -1,8 +1,8 @@
 name-template: '$RESOLVED_VERSION'
 tag-template: 'release/$RESOLVED_VERSION'
 version-template: '$MAJOR.$MINOR'
-version-resolver:
-  default: minor
+# version-resolver:
+#   default: minor
 categories:
   - title: 🚀 New features and enhancements
     collapse-after: 10
