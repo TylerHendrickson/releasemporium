@@ -78,6 +78,7 @@ jobs:
         with:
           name: terraform-${{ github.sha }}
           path: ${{ github.workspace }}/terraform
+      - run: terraform init
       - run: echo "Working directory is $PWD"
       - name: Show contents
         run: ls -lahR
