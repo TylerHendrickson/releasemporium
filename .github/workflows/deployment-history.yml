@@ -9,7 +9,7 @@ permissions:
 env:
   RELEASE_TAG: ${{ github.event.deployment.ref }}
   DEPLOY_ENVIRONMENT: ${{ github.event.deployment_status.environment }}
-  DEPLOY_ENVIRONMENT_URL: "${{ github.event.deployment_status.repository_url }}/deployments/${{ github.event.deployment_status.environment }}"
+  DEPLOY_ENVIRONMENT_URL: "${{ github.event.repository.html_url }}/deployments/${{ github.event.deployment_status.environment }}"
   DEPLOY_MOMENT: ${{ github.event.deployment_status.updated_at }}
   DEPLOY_LOG_URL: ${{ github.event.deployment_status.log_url }}
 
@@ -20,9 +20,6 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - run: echo $THE_CONTEXT
-        env:
-          THE_CONTEXT: ${{ toJson(github.event) }}
       - uses: actions/checkout@v3
       - name: Get release notes
         id: get
