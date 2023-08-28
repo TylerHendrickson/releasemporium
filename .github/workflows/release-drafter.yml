@@ -17,7 +17,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - run: "echo PREV_RELEASE_TAG=$(git describe --tags --match='release/*' refs/heads/main)"
+      - run: "git describe --tags --match='release/*' refs/heads/main"
       - uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
