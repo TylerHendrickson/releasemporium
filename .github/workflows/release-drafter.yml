@@ -18,7 +18,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: "git describe --tags --match='release/*' refs/heads/main"
+      - name: "Determine next version"
+        id: next_version
+        run: |
+          next_version_release_year=$(date +%Y)
+          next_version_release_number="1"
+          tag=$(git describe --tags --match='release/[0-9][0-9][0-9][0-9].[0-9]*' refs/heads/main 2> /dev/null)
+          regex='release\/([0-9]{4})\.([0-9]{0,})'
+          if [[ $tag =~ $regex ]]; then
+              echo "Found tag for previous release: $tag"
+              prev_version_release_year="${BASH_REMATCH[1]}"
+              echo "Previous version year: $prev_version_release_year"
+              prev_version_release_number="${BASH_REMATCH[2]}"
+              echo "Previous version number: $prev_version_release_number"
+              ((next_version_release_number=prev_version_release_number+1))
+          else
+              echo "Could not locate a previous release version" >&2
+          fi
+          next_version="$next_version_release_year.$next_version_release_number"
+          echo "Next version: $next_version"
+          echo "result=$next_version" >> $GITHUB_OUTPUT
       - uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ steps.next_version.outputs.result }}
