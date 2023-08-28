@@ -4,6 +4,7 @@
 next_version_release_year=$(TZ='UTC' date '+%Y')
 next_version_release_number=1
 
+echo $GITHUB_REF
 tag=$(git describe --tags --match='release/[0-9][0-9][0-9][0-9].[0-9]*' refs/heads/main)
 echo "got tag: $tag"
 regex='release\/([0-9]{4})\.([0-9]{0,})'
