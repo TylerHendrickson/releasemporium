@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-tags: "true"
       - name: "Determine next version"
         id: next_version
         run: |
