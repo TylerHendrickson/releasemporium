@@ -1,10 +1,11 @@
 #! /bin/bash
 
-# Set defaults
+# Defaults
 next_version_release_year=$(TZ='UTC' date '+%Y')
 next_version_release_number=1
 
-tag=$(git describe --tags --match='release/[0-9][0-9][0-9][0-9].[0-9]*' refs/heads/main 2> /dev/null)
+tag=$(git describe --tags --match='release/[0-9][0-9][0-9][0-9].[0-9]*' refs/heads/main)
+echo "got tag: $tag"
 regex='release\/([0-9]{4})\.([0-9]{0,})'
 if [[ $tag =~ $regex ]]; then
     echo "Found tag for previous release: $tag"
