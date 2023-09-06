@@ -20,6 +20,7 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       SSSH_TESTING: ${{ secrets.DUMMY_SECRET }}
     steps:
+      - run: echo "This is a test"
       - uses: actions/checkout@v3
       - run: printf "Tell no one $SSSH_TESTING" | openssl aes-256-cbc -a -salt -pass pass:somepassword
       - uses: hashicorp/setup-terraform@v2
