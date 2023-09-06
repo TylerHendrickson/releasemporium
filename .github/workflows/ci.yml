@@ -32,6 +32,7 @@ jobs:
         env:
           TF_VAR_release_identifier: ${{ github.ref_name }}
         run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
+      - run: cat "$HOME/some-output.txt" || echo "Not found"
       - name: Generate plaintext plan
         id: show_plan
         run: terraform show -no-color tfplan
