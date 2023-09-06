@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request: {}
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  plan:
+    name: Plan Deployment
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    outputs:
+      terraform_plan_exitcode: ${{ steps.terraform_plan.outputs.exitcode }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: true
+      - uses: actions/setup-go@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          go-version-file: go.mod
+      - name: Terraform Init
+        run: terraform init
+      - name: Terraform Plan
+        id: terraform_plan
+        env:
+          TF_VAR_release_identifier: ${{ github.ref_name }}
+        run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
+      - name: Generate plaintext plan
+        id: show_plan
+        run: terraform show -no-color tfplan
+      - name: Reformat Plan
+        run: |
+          echo '${{ steps.show_plan.outputs.stdout || steps.show_plan.outputs.stderr }}' \
+            | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
+          PLAN=$(cat plan.txt | head -c 65300)
+          echo "PLAN<<EOF" >> $GITHUB_ENV
+          echo "$PLAN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      - name: Write the step summary
+        run: |
+          REPORT_FILE=$(mktemp -t summary.md.XXXXX )
+          echo "REPORT_FILE=$REPORT_FILE" >> $GITHUB_ENV
+          cat >> $REPORT_FILE << 'ENDOFREPORT'
+          ## Terraform Plan Result
+
+          <details>
+          <summary>Output</summary>
+
+          ```diff
+          ${{ env.PLAN }}
+          ```
+
+          </details>
+          ENDOFREPORT
+          cat $REPORT_FILE >> $GITHUB_STEP_SUMMARY
+      - name: Encrypt terraform plan file
+        env:
+          PASSPHRASE: ${{ secrets.TFPLAN_SECRET }}
+        run: |
+          echo "$PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 -c --cipher-algo AES256 tfplan
+          rm tfplan
+      - name: Store terraform artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-${{ github.sha }}
+          path: |
+            ${{ github.workspace }}/terraform
+            !${{ github.workspace }}/terraform/.terraform
+      - name: Store executable artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: bin-${{ github.sha }}
+          path: ${{ github.workspace }}/bin
