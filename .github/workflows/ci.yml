@@ -16,6 +16,9 @@ jobs:
         working-directory: terraform
     outputs:
       terraform_plan_exitcode: ${{ steps.terraform_plan.outputs.exitcode }}
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      SSSH_TESTING: ${{ secrets.DUMMY_SECRET }}
     steps:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
