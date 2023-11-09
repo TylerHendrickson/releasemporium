@@ -1,0 +1,16 @@
+name: Build Docker image for GOST API
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions: write-all
+
+jobs:
+  do:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create the secret
+        run: openssl rand -hex 1024 > newsecret
+      - name: Set the secret
+        run: gh secret set MyRotatedWorkflowSecret < newsecret
