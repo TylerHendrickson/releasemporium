@@ -1,0 +1,13 @@
+name: Example Dispatch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  do:
+    name: Stuff
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Dispatched!"
+      - name: Dump Context
+        uses: crazy-max/ghaction-dump-context@v2
