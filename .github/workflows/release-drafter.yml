@@ -7,6 +7,13 @@ on:
   pull_request_target:
     types: [opened, reopened, synchronize]
   workflow_dispatch:
+    inputs:
+      inspect_latest_release:
+        description: >-
+          Whether to compute the next release version using the latest release tag.
+          If false, computes the next release version using the most-recent release tag on `main`.
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -21,11 +28,16 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: main
+      - id: latest_release
+        if: github.event_name != 'workflow_dispatch' || inputs.inspect_latest_release
+        run: echo "tag=$(gh release view --json tagName --jq .tagName)" >> $GITHUB_OUTPUT
       - name: "Determine next version"
         id: next_version
         run: |
           chmod +x .github/next_release_version.bash
-          echo "result=$(bash .github/next_release_version.bash)" >> $GITHUB_OUTPUT
+          echo "result=$(bash .github/next_release_version.bash ${{ env.LATEST_TAG }})" >> $GITHUB_OUTPUT
+        env:
+          LATEST_TAG: ${{ steps.latest_release.outcome == 'success' && steps.latest_release.tag || '' }}
       - uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
