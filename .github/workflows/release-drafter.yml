@@ -31,6 +31,8 @@ jobs:
       - id: latest_release
         if: github.event_name != 'workflow_dispatch' || inputs.inspect_latest_release
         run: echo "tag=$(gh release view --json tagName --jq .tagName)" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Determine next version"
         id: next_version
         run: |
