@@ -25,23 +25,25 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      - uses: crazy-max/ghaction-dump-context@v2
       - uses: actions/checkout@v3
         with:
           ref: main
-      - id: latest_release
+      - name: Get tag of latest release
+        id: latest_release
         if: github.event_name != 'workflow_dispatch' || inputs.inspect_latest_release
         run: echo "tag=$(gh release view --json tagName --jq .tagName)" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: "Determine next version"
-        id: next_version
+      - name: "Determine next release version"
+        id: next_release
         run: |
           chmod +x .github/next_release_version.bash
-          echo "result=$(bash .github/next_release_version.bash $LATEST_TAG)" >> $GITHUB_OUTPUT
+          echo "version=$(bash .github/next_release_version.bash $LATEST_TAG)" >> $GITHUB_OUTPUT
         env:
           LATEST_TAG: ${{ steps.latest_release.outputs.tag || '' }}
       - uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          version: ${{ steps.next_version.outputs.result }}
+          version: ${{ steps.next_release.outputs.version }}
