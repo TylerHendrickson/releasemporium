@@ -37,7 +37,7 @@ jobs:
         id: next_version
         run: |
           chmod +x .github/next_release_version.bash
-          echo "result=$(bash .github/next_release_version.bash ${{ env.LATEST_TAG }})" >> $GITHUB_OUTPUT
+          echo "result=$(bash .github/next_release_version.bash $LATEST_TAG)" >> $GITHUB_OUTPUT
         env:
           LATEST_TAG: ${{ steps.latest_release.outputs.tag || '' }}
       - uses: release-drafter/release-drafter@v5
