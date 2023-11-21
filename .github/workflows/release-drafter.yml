@@ -39,7 +39,7 @@ jobs:
           chmod +x .github/next_release_version.bash
           echo "result=$(bash .github/next_release_version.bash ${{ env.LATEST_TAG }})" >> $GITHUB_OUTPUT
         env:
-          LATEST_TAG: ${{ steps.latest_release.outcome == 'success' && steps.latest_release.outputs.tag || '' }}
+          LATEST_TAG: ${{ steps.latest_release.outputs.tag || '' }}
       - uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
