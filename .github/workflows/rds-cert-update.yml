@@ -32,9 +32,6 @@ jobs:
         with:
           show-progress: 'false'
           persist-credentials: 'false'
-      - run: |
-          echo $pwd
-          ls -lah
       - name: Show certificate expiration date
         id: get-expiration-date
         run: |
