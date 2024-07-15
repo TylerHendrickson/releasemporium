@@ -109,7 +109,7 @@ jobs:
           *Pusher: @${{ env.GH_ACTOR }}, Action: `${{ env.GH_ACTION }}`, Workflow: [`${{ env.GH_WORKFLOW }}`](${{ env.GH_SERVER}}/${{ env.GH_REPO }}/actions/runs/${{ env.GH_RUN_ID }})*
           ENDOFPRDESCRIPTION
         env:
-          DOWNLOAD_DATE: ${{ steps.format-dates.outputs.today }}
+          DOWNLOAD_DATE: ${{ steps.format-dates.outputs.download-date }}
           CURRENT_EXPIRATION_DATE: ${{ steps.format-dates.outputs.current-expiration }}
           NEW_EXPIRATION_DATE: ${{ steps.format-dates.outputs.new-expiration }}
           GH_ACTOR: ${{ github.actor }}
