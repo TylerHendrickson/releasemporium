@@ -35,7 +35,9 @@ jobs:
       - name: Show certificate expiration date
         id: get-expiration-date
         run: |
-          EXPIRATION_DATE=$(openssl x509 -enddate -noout -in "$BUNDLE_FILE" | cut -d= -f 2)
+          CHECK_OUTPUT_FILE=$(mktemp -t expiration-date.XXXXX)
+          openssl x509 -enddate -noout -in "$BUNDLE_FILE" > $CHECK_OUTPUT_FILE
+          EXPIRATION_DATE=$(cut -d= -f 2 "$CHECK_OUTPUT_FILE")
           echo "value=$EXPIRATION_DATE" >> $GITHUB_OUTPUT
       - name: Check certificate expiration
         id: expiration-check
