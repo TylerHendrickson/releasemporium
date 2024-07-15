@@ -19,9 +19,6 @@ jobs:
       expiration-rfc822: ${{ steps.get-expiration-date.outputs.value }}
       update-required: ${{ steps.expiration-check.outputs.update-required }}
     steps:
-      - run: |
-          echo $pwd
-          ls -lah
       - uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
           disable-sudo: true
@@ -35,6 +32,9 @@ jobs:
         with:
           show-progress: 'false'
           persist-credentials: 'false'
+      - run: |
+          echo $pwd
+          ls -lah
       - name: Show certificate expiration date
         id: get-expiration-date
         run: |
