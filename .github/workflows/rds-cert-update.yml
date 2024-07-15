@@ -23,9 +23,6 @@ jobs:
           disable-sudo: true
           egress-policy: block
           allowed-endpoints: >
-            api.deps.dev:443
-            api.github.com:443
-            api.securityscorecards.dev:443
             github.com:443
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
@@ -70,9 +67,7 @@ jobs:
           disable-sudo: true
           egress-policy: block
           allowed-endpoints: >
-            api.deps.dev:443
             api.github.com:443
-            api.securityscorecards.dev:443
             github.com:443
             truststore.pki.rds.amazonaws.com:443
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -96,13 +91,14 @@ jobs:
           CURRENT_EXPIRATION_RFC822: ${{ needs.check.outputs.expiration-rfc822 }}
       - name: Write the pull request description
         id: pr-description
-        run: >
+        run: |
           PR_DESCRIPTION_FILE=$(mktemp -t description.md.XXXXX)
           echo "file=$PR_DESCRIPTION_FILE" >> $GITHUB_OUTPUT
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRDESCRIPTION'
           ## RDS Aurora CA Bundle Update
 
-          This pull request replaces the current RDS Auora CA bundle file, which is not valid after **${{ env.CURRENT_EXPIRATION_DATE }}**.
+          This pull request replaces the current RDS Auora CA bundle file, \
+          which is not valid after **${{ env.CURRENT_EXPIRATION_DATE }}**.
 
           The new CA bundle file has the following details:
           - Downloaded from ${{ env.BUNDLE_DOWNLOAD_URL }}
