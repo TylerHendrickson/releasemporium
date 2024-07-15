@@ -84,7 +84,7 @@ jobs:
       - name: Format old and new CA bundle expiration dates
         id: format-dates
         run: |
-          DOWNLOAD_DATE=$(stat -c '@%Y' "$BUNDLE_FILE" | date --iso-8601=date -f -)
+          DOWNLOAD_DATE=$(stat -c '@%Z' "$BUNDLE_FILE" | date --iso-8601=date -f -)
           echo "download-date=$DOWNLOAD_DATE" >> $GITHUB_OUTPUT
 
           echo "current-expiration=$(echo "$CURRENT_EXPIRATION_RFC822" | date --iso-8601=date -f - )" >> $GITHUB_OUTPUT
