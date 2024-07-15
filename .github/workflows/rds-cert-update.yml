@@ -123,3 +123,5 @@ jobs:
           body-path: ${{ steps.pr-description.outputs.file }}
           branch: chore/rds-ca-bundle-update/expires/${{ steps.format-dates.outputs.new-expiration }}
           commit-message: "Add RDS CA bundle downloaded at ${{ steps.format-dates.outputs.now }}"
+          add-paths: |
+            ${{ env.BUNDLE_FILE }}
