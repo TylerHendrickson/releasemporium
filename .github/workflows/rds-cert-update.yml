@@ -15,6 +15,8 @@ jobs:
   check:
     name: Check Current Bundle
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       expiration-rfc822: ${{ steps.get-expiration-date.outputs.value }}
       update-required: ${{ steps.expiration-check.outputs.update-required }}
@@ -57,6 +59,9 @@ jobs:
   update:
     name: Updated bundle pull request
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     needs:
       - check
     if: needs.check.outputs.update-required == 'true'
@@ -100,11 +105,13 @@ jobs:
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRDESCRIPTION'
           ## RDS Aurora CA Bundle Update
 
-          This pull request replaces the current RDS Auora CA Bundle,
+          This pull request replaces the current RDS Auora CA bundle file,
           which is not valid after **${{ env.CURRENT_EXPIRATION_DATE }}**.
 
-          The new CA bundle file was downloaded from ${{ env.BUNDLE_DOWNLOAD_URL }}
-          at ${{ env.DOWNLOAD_DATE }} and will expire on **${{ env.NEW_EXPIRATION_DATE }}**.
+          The new CA bundle file has the following details:
+          - Downloaded from ${{ env.BUNDLE_DOWNLOAD_URL }}
+          - Download date: ${{ env.DOWNLOAD_DATE }}
+          - Expiration date: ${{ env.NEW_EXPIRATION_DATE }}
 
           *Pusher: @${{ env.GH_ACTOR }}, Action: `${{ env.GH_ACTION }}`, Workflow: [`${{ env.GH_WORKFLOW }}`](${{ env.GH_SERVER}}/${{ env.GH_REPO }}/actions/runs/${{ env.GH_RUN_ID }})*
           ENDOFPRDESCRIPTION
