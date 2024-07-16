@@ -107,7 +107,6 @@ jobs:
           - Downloaded from: ${{ env.BUNDLE_DOWNLOAD_URL }}
           - Downloaded at: ${{ env.DOWNLOAD_DATE }}
           - Expiration date: ${{ env.NEW_EXPIRATION_DATE }}
-
           ENDOFPRDESCRIPTION
 
           FAKE_EXPIRATION_THRESHOLD_IN_SECONDS=31536000
@@ -116,7 +115,6 @@ jobs:
             > [!WARNING]
             > The new CA bundle expiration date is less than 30 days from today!
             > Please investigate before merging this pull request.
-
             ENDOFPRWARNING
           fi
 
