@@ -115,7 +115,7 @@ jobs:
             > [!WARNING]
             > The new CA bundle expiration date is less than 30 days from today!
             > Please investigate before merging this pull request.
-            ENDOFPRWARNING
+          ENDOFPRWARNING
           fi
 
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRFOOTER'
