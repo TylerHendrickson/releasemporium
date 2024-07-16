@@ -99,8 +99,7 @@ jobs:
           PR_DESCRIPTION_FILE=$(mktemp -t description.md.XXXXX)
           echo "file=$PR_DESCRIPTION_FILE" >> $GITHUB_OUTPUT
 
-          FAKE_EXPIRATION_THRESHOLD_IN_SECONDS=31536000
-          if ! openssl x509 -checkend "$FAKE_EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
+          if ! openssl x509 -checkend "$THIRTY_DAYS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
           > [!WARNING]
           > The new CA bundle expiration date is less than 30 days from today,
