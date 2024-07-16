@@ -112,10 +112,10 @@ jobs:
 
           FAKE_EXPIRATION_THRESHOLD_IN_SECONDS=31536000
           if ! openssl x509 -checkend "$FAKE_EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
-            cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
-            > [!WARNING]
-            > The new CA bundle expiration date is less than 30 days from today!
-            > Please investigate before merging this pull request.
+          cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
+          > [!WARNING]
+          > The new CA bundle expiration date is less than 30 days from today!
+          > Please investigate before merging this pull request.
 
           ENDOFPRWARNING
           fi
