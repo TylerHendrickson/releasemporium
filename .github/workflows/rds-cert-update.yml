@@ -7,10 +7,14 @@ on:
 
 env:
   BUNDLE_FILE: test-rds-bundle.pem
+  THIRTY_DAYS_IN_SECONDS: 2592000
+
+permissions:
+  contents: read
 
 jobs:
   check:
-    name: Check Current Bundle
+    name: Check current CA bundle
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,19 +43,19 @@ jobs:
         id: expiration-check
         run: |
           echo "Current CA bundle expiration: $EXPIRATION_DATE"
-          FOUR_WEEKS_IN_SECONDS=2419200
-            if openssl x509 -checkend "$FOUR_WEEKS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
+          THIRTY_DAYS_IN_SECONDS=2592000
+            if openssl x509 -checkend "$THIRTY_DAYS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
               echo 'update-required=false' >> $GITHUB_OUTPUT
-              echo 'Expiration is more than 4 weeks, so no action is needed.' >> $GITHUB_STEP_SUMMARY
+              echo 'CA bundle expiration is greater than 30 days in the future, so no action is needed.' >> $GITHUB_STEP_SUMMARY
             else
               echo 'update-required=true' >> $GITHUB_OUTPUT
-              echo 'CA bundle will expire in less than 4 weeks. Please update!' >> $GITHUB_STEP_SUMMARY
+              echo 'CA bundle expires in less than 30 days. Please update!' >> $GITHUB_STEP_SUMMARY
             fi
         env:
           EXPIRATION_DATE: ${{ steps.get-expiration-date.outputs.value }}
 
   update:
-    name: Updated bundle pull request
+    name: Update bundle pull request
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,6 +93,13 @@ jobs:
           echo "new-expiration=$(cat $NEW_EXPIRATION_DATE_FILE)" >> $GITHUB_OUTPUT
         env:
           CURRENT_EXPIRATION_RFC822: ${{ needs.check.outputs.expiration-rfc822 }}
+      - name: Check new CA bundle expiration
+        id: check-new-expiration
+        run: |
+          if openssl x509 -checkend "$THIRTY_DAYS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
+            EXPIRATION_WARNING="New CA bundle expiration is less than 30 days from now! This should be investigated."
+          fi
+          echo "warning=$EXPIRATION_WARNING" >> $GITHUB_OUTPUT
       - name: Write the pull request description
         id: pr-description
         run: |
@@ -104,8 +115,20 @@ jobs:
           - Downloaded at: ${{ env.DOWNLOAD_DATE }}
           - Expiration date: ${{ env.NEW_EXPIRATION_DATE }}
 
-          *Pusher: @${{ env.GH_ACTOR }}, Action: `${{ env.GH_ACTION }}`, Workflow: [`${{ env.GH_WORKFLOW }}`](${{ env.GH_SERVER}}/${{ env.GH_REPO }}/actions/runs/${{ env.GH_RUN_ID }})*
           ENDOFPRDESCRIPTION
+
+          if ! openssl x509 -checkend "$THIRTY_DAYS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
+            cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
+            > [!WARNING]
+            > The new CA bundle expiration date is less than 30 days from today!
+            > Please investigate before merging this pull request.
+
+            ENDOFPRWARNING
+          fi
+
+          cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRFOOTER'
+          *Pusher: @${{ env.GH_ACTOR }}, Action: `${{ env.GH_ACTION }}`, Workflow: [`${{ env.GH_WORKFLOW }}`](${{ env.GH_SERVER}}/${{ env.GH_REPO }}/actions/runs/${{ env.GH_RUN_ID }})*
+          ENDOFPRFOOTER
         env:
           DOWNLOAD_DATE: ${{ steps.format-dates.outputs.download-date }}
           CURRENT_EXPIRATION_DATE: ${{ steps.format-dates.outputs.current-expiration }}
@@ -117,6 +140,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GH_RUN_ID: ${{ github.run_id }}
       - name: Submit Pull Request
+        id: submit-pr
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6.1.0
         with:
           title: "Chore [certificates] Replace RDS CA bundle expiring on ${{ steps.format-dates.outputs.current-expiration }}"
@@ -125,3 +149,10 @@ jobs:
           commit-message: "Add RDS CA bundle downloaded on ${{ steps.format-dates.outputs.download-date }}"
           add-paths: |
             ${{ env.BUNDLE_FILE }}
+      - name: Write PR summary
+        run: |
+          echo "Result: $PR_ACTIONED pull request [#$PR_NUMBER]($PR_URL)." >> $GITHUB_STEP_SUMMARY
+        env:
+          PR_ACTIONED: ${{ steps.submit-pr.outputs.pull-request-operation }}
+          PR_NUMBER: ${{ steps.submit-pr.outputs.pull-request-number }}
+          PR_URL: ${{ steps.submit-pr.outputs.pull-request-url }}
