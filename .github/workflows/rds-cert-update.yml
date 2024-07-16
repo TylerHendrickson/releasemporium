@@ -98,6 +98,19 @@ jobs:
         run: |
           PR_DESCRIPTION_FILE=$(mktemp -t description.md.XXXXX)
           echo "file=$PR_DESCRIPTION_FILE" >> $GITHUB_OUTPUT
+
+          FAKE_EXPIRATION_THRESHOLD_IN_SECONDS=31536000
+          if ! openssl x509 -checkend "$FAKE_EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
+          cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
+          > [!WARNING]
+          > The new CA bundle expiration date is less than 30 days from today,
+          > which indicates that the wrong file may have been downloaded.
+          >
+          > Please investigate before merging this pull request!
+
+          ENDOFPRWARNING
+          fi
+
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRDESCRIPTION'
           ## RDS Aurora CA Bundle Update
 
@@ -108,21 +121,8 @@ jobs:
           - Downloaded at: ${{ env.DOWNLOAD_DATE }}
           - Expiration date: ${{ env.NEW_EXPIRATION_DATE }}
 
-          ENDOFPRDESCRIPTION
-
-          FAKE_EXPIRATION_THRESHOLD_IN_SECONDS=31536000
-          if ! openssl x509 -checkend "$FAKE_EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
-          cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
-          > [!WARNING]
-          > The new CA bundle expiration date is less than 30 days from today!
-          > Please investigate before merging this pull request.
-
-          ENDOFPRWARNING
-          fi
-
-          cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRFOOTER'
           *Pusher: @${{ env.GH_ACTOR }}, Action: `${{ env.GH_ACTION }}`, Workflow: [`${{ env.GH_WORKFLOW }}`](${{ env.GH_SERVER}}/${{ env.GH_REPO }}/actions/runs/${{ env.GH_RUN_ID }})*
-          ENDOFPRFOOTER
+          ENDOFPRDESCRIPTION
         env:
           DOWNLOAD_DATE: ${{ steps.format-dates.outputs.download-date }}
           CURRENT_EXPIRATION_DATE: ${{ steps.format-dates.outputs.current-expiration }}
