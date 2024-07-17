@@ -103,7 +103,7 @@ jobs:
           PR_DESCRIPTION_FILE=$(mktemp -t description.md.XXXXX)
           echo "file=$PR_DESCRIPTION_FILE" >> $GITHUB_OUTPUT
 
-          if ! openssl x509 -checkend "31536000" -noout -in "$BUNDLE_FILE_PATH"; then
+          if ! openssl x509 -checkend "$EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE_PATH"; then
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
           > [!WARNING]
           > The replacement CA bundle included in this PR will expire sooner the configured replacement threshold allows, which indicates that the wrong file may have been downloaded.
