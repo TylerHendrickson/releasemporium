@@ -54,6 +54,8 @@ jobs:
             CHECK_RESULT="CA bundle expires in less than $EXPIRATION_THRESHOLD_IN_DAYS days."
             CHECK_RECOMMENDATION="current CA bundle should be replaced."
           fi
+          echo "Date of check: $(date --iso-8601=date)" | tee -a $GITHUB_STEP_SUMMARY
+          echo "Configured expiration threshold: $EXPIRATION_THRESHOLD_IN_DAYS days" | tee -a $GITHUB_STEP_SUMMARY
           echo "Current CA bundle expiration: $EXPIRATION_DATE" | tee -a $GITHUB_STEP_SUMMARY
           echo "Check result: $CHECK_RESULT" | tee -a $GITHUB_STEP_SUMMARY
           echo "Recommended action: $CHECK_RECOMMENDATION" | tee -a $GITHUB_STEP_SUMMARY
