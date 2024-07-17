@@ -6,11 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  BUNDLE_FILE: test-rds-bundle.pem
-  THIRTY_DAYS_IN_SECONDS: 2592000
-
-permissions:
-  contents: read
+  BUNDLE_FILE_PATH: test-rds-bundle.pem
+  EXPIRATION_THRESHOLD_IN_DAYS: 30
 
 jobs:
   check:
@@ -21,6 +18,7 @@ jobs:
     outputs:
       expiration-rfc822: ${{ steps.get-expiration-date.outputs.value }}
       update-required: ${{ steps.expiration-check.outputs.update-required }}
+      expiration-threshold-seconds: ${{ steps.expiration-threshold.outputs.total-seconds }}
     steps:
       - uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
@@ -32,30 +30,35 @@ jobs:
         with:
           show-progress: 'false'
           persist-credentials: 'false'
+      - name: Convert expiration threshold days to seconds
+        id: expiration-threshold
+        run: |
+          EXPIRATION_THRESHOLD_IN_SECONDS=$((EXPIRATION_THRESHOLD_IN_DAYS*86400))
+          echo "total-seconds=$EXPIRATION_THRESHOLD_IN_SECONDS" >> $GITHUB_OUTPUT
       - name: Show certificate expiration date
         id: get-expiration-date
         run: |
           CHECK_OUTPUT_FILE=$(mktemp -t expiration-date.XXXXX)
-          openssl x509 -enddate -noout -in "$BUNDLE_FILE" > $CHECK_OUTPUT_FILE
+          openssl x509 -enddate -noout -in "$BUNDLE_FILE_PATH" > $CHECK_OUTPUT_FILE
           EXPIRATION_DATE=$(cut -d= -f 2 "$CHECK_OUTPUT_FILE")
           echo "value=$EXPIRATION_DATE" >> $GITHUB_OUTPUT
       - name: Check certificate expiration
         id: expiration-check
         run: |
           echo "Current CA bundle expiration: $EXPIRATION_DATE"
-          THIRTY_DAYS_IN_SECONDS=2592000
-            if openssl x509 -checkend "$THIRTY_DAYS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
-              echo 'update-required=false' >> $GITHUB_OUTPUT
-              echo 'CA bundle expiration is greater than 30 days in the future, so no action is needed.' >> $GITHUB_STEP_SUMMARY
-            else
-              echo 'update-required=true' >> $GITHUB_OUTPUT
-              echo 'CA bundle expires in less than 30 days. Please update!' >> $GITHUB_STEP_SUMMARY
-            fi
+          if openssl x509 -checkend "$EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE_PATH"; then
+            echo 'update-required=false' >> $GITHUB_OUTPUT
+            echo "CA bundle expiration is more than $EXPIRATION_THRESHOLD_IN_DAYS days from now, so no action is needed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo 'update-required=true' >> $GITHUB_OUTPUT
+            echo "CA bundle expires in less than $EXPIRATION_THRESHOLD_IN_DAYS days. Please update" >> $GITHUB_STEP_SUMMARY
+          fi
         env:
           EXPIRATION_DATE: ${{ steps.get-expiration-date.outputs.value }}
+          EXPIRATION_THRESHOLD_IN_SECONDS: ${{ steps.expiration-threshold.outputs.total-seconds }}
 
   update:
-    name: Update bundle pull request
+    name: Replace bundle with pull request
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -65,6 +68,7 @@ jobs:
     if: needs.check.outputs.update-required == 'true'
     env:
       BUNDLE_DOWNLOAD_URL: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+      EXPIRATION_THRESHOLD_IN_SECONDS: ${{ needs.check.outputs.expiration-threshold-seconds }}
     steps:
       - uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
         with:
@@ -79,17 +83,17 @@ jobs:
           show-progress: 'false'
           persist-credentials: 'false'
       - name: Download latest CA bundle
-        run: wget -O "$BUNDLE_FILE" "$BUNDLE_DOWNLOAD_URL"
+        run: wget -O "$BUNDLE_FILE_PATH" "$BUNDLE_DOWNLOAD_URL"
       - name: Format old and new CA bundle expiration dates
         id: format-dates
         run: |
-          DOWNLOAD_DATE=$(stat -c '@%Z' "$BUNDLE_FILE" | date --iso-8601=seconds -f -)
+          DOWNLOAD_DATE=$(stat -c '@%Z' "$BUNDLE_FILE_PATH" | date --iso-8601=seconds -f -)
           echo "download-date=$DOWNLOAD_DATE" >> $GITHUB_OUTPUT
 
           echo "current-expiration=$(echo "$CURRENT_EXPIRATION_RFC822" | date --iso-8601=date -f - )" >> $GITHUB_OUTPUT
 
           NEW_EXPIRATION_DATE_FILE=$(mktemp -t new-expiration-date.XXXXX)
-          openssl x509 -enddate -noout -in "$BUNDLE_FILE" | cut -d= -f 2 | date --iso-8601=date -f - > $NEW_EXPIRATION_DATE_FILE
+          openssl x509 -enddate -noout -in "$BUNDLE_FILE_PATH" | cut -d= -f 2 | date --iso-8601=date -f - > $NEW_EXPIRATION_DATE_FILE
           echo "new-expiration=$(cat $NEW_EXPIRATION_DATE_FILE)" >> $GITHUB_OUTPUT
         env:
           CURRENT_EXPIRATION_RFC822: ${{ needs.check.outputs.expiration-rfc822 }}
@@ -99,11 +103,11 @@ jobs:
           PR_DESCRIPTION_FILE=$(mktemp -t description.md.XXXXX)
           echo "file=$PR_DESCRIPTION_FILE" >> $GITHUB_OUTPUT
 
-          if ! openssl x509 -checkend "$THIRTY_DAYS_IN_SECONDS" -noout -in "$BUNDLE_FILE"; then
+          if ! openssl x509 -checkend "$EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE_PATH"; then
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
           > [!WARNING]
-          > The new CA bundle expiration date is less than 30 days from today,
-          > which indicates that the wrong file may have been downloaded.
+          > The new CA bundle expiration date is less than the configured threshold of ${{ env.EXPIRATION_THRESHOLD_IN_DAYS }} days from today,
+          > indicates that the wrong file may have been downloaded.
           >
           > Please investigate before merging this pull request!
 
@@ -119,6 +123,8 @@ jobs:
           - Downloaded from: ${{ env.BUNDLE_DOWNLOAD_URL }}
           - Downloaded at: ${{ env.DOWNLOAD_DATE }}
           - Expiration date: ${{ env.NEW_EXPIRATION_DATE }}
+
+          *This pull request was automatically created by GitHub Actions, which is configured to replace the CA bundle file `${{ env.BUNDLE_FILE_PATH }}` when it is detected as expiring in less than ${{ env.EXPIRATION_THRESHOLD_IN_DAYS }} days.*
 
           *Pusher: @${{ env.GH_ACTOR }}, Action: `${{ env.GH_ACTION }}`, Workflow: [`${{ env.GH_WORKFLOW }}`](${{ env.GH_SERVER}}/${{ env.GH_REPO }}/actions/runs/${{ env.GH_RUN_ID }})*
           ENDOFPRDESCRIPTION
@@ -141,7 +147,7 @@ jobs:
           branch: chore/rds-ca-bundle-update/expires/${{ steps.format-dates.outputs.new-expiration }}
           commit-message: "Add RDS CA bundle downloaded on ${{ steps.format-dates.outputs.download-date }}"
           add-paths: |
-            ${{ env.BUNDLE_FILE }}
+            ${{ env.BUNDLE_FILE_PATH }}
       - name: Write PR summary
         run: |
           echo "Result: $PR_ACTIONED pull request [#$PR_NUMBER]($PR_URL)." >> $GITHUB_STEP_SUMMARY
