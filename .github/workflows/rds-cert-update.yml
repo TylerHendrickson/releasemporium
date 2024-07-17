@@ -45,14 +45,18 @@ jobs:
       - name: Check certificate expiration
         id: expiration-check
         run: |
-          echo "Current CA bundle expiration: $EXPIRATION_DATE"
           if openssl x509 -checkend "$EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE_PATH"; then
             echo 'update-required=false' >> $GITHUB_OUTPUT
-            echo "CA bundle expiration is more than $EXPIRATION_THRESHOLD_IN_DAYS days from now, so no action is needed." >> $GITHUB_STEP_SUMMARY
+            CHECK_RESULT="CA bundle expiration is more than $EXPIRATION_THRESHOLD_IN_DAYS days from now."
+            CHECK_RECOMMENDATION="no action required."
           else
             echo 'update-required=true' >> $GITHUB_OUTPUT
-            echo "CA bundle expires in less than $EXPIRATION_THRESHOLD_IN_DAYS days. Please update" >> $GITHUB_STEP_SUMMARY
+            CHECK_RESULT="CA bundle expires in less than $EXPIRATION_THRESHOLD_IN_DAYS days."
+            CHECK_RECOMMENDATION="current CA bundle should be replaced."
           fi
+          echo "Current CA bundle expiration: $EXPIRATION_DATE" | tee -a $GITHUB_STEP_SUMMARY
+          echo "Check result: $CHECK_RESULT" | tee -a $GITHUB_STEP_SUMMARY
+          echo "Recommended action: $CHECK_RECOMMENDATION" | tee -a $GITHUB_STEP_SUMMARY
         env:
           EXPIRATION_DATE: ${{ steps.get-expiration-date.outputs.value }}
           EXPIRATION_THRESHOLD_IN_SECONDS: ${{ steps.expiration-threshold.outputs.total-seconds }}
