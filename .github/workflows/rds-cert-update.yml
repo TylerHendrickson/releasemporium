@@ -106,8 +106,7 @@ jobs:
           if ! openssl x509 -checkend "31536000" -noout -in "$BUNDLE_FILE_PATH"; then
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
           > [!WARNING]
-          > The new CA bundle expiration date is less than the configured threshold of ${{ env.EXPIRATION_THRESHOLD_IN_DAYS }} days from today,
-          > indicates that the wrong file may have been downloaded.
+          > The replacement CA bundle included in this PR will expire sooner the configured replacement threshold allows, which indicates that the wrong file may have been downloaded.
           >
           > Please investigate before merging this pull request!
 
