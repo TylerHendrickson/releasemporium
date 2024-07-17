@@ -104,10 +104,12 @@ jobs:
       - name: Write the pull request description
         id: pr-description
         run: |
+          PR_DESCRIPTION_WARNING_FILE=$(mktemp -t description-warning.md.XXXXX)
           PR_DESCRIPTION_FILE=$(mktemp -t description.md.XXXXX)
           echo "file=$PR_DESCRIPTION_FILE" >> $GITHUB_OUTPUT
 
           if ! openssl x509 -checkend "$EXPIRATION_THRESHOLD_IN_SECONDS" -noout -in "$BUNDLE_FILE_PATH"; then
+          echo "warn-new-expiration-threshold=true" >> $GITHUB_OUTPUT
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRWARNING'
           > [!WARNING]
           > The replacement CA bundle included in this PR will expire sooner the configured replacement threshold allows, which indicates that the wrong file may have been downloaded.
@@ -115,6 +117,8 @@ jobs:
           > Please investigate before merging this pull request!
 
           ENDOFPRWARNING
+
+          cat "$PR_DESCRIPTION_WARNING_FILE" | tee -a "$PR_DESCRIPTION_FILE" >> $GITHUB_STEP_SUMMARY
           fi
 
           cat >> $PR_DESCRIPTION_FILE << 'ENDOFPRDESCRIPTION'
