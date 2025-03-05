@@ -12,7 +12,24 @@ permissions:
   contents: read
 
 jobs:
+  label_pull_requests:
+    name: "Label pull requests"
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Run auto-labeler"
+        uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6.1.0
+        with:
+          disable-releaser: true
+          disable-autolabeler: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   update_release_draft:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
       pull-requests: write

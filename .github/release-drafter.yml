@@ -19,6 +19,7 @@ tag-prefix: 'release/'
 version-resolver:
   default: minor
 prerelease: true
+# Necessary to resolve release-drafter bug in v6.1.0:
 include-pre-releases: true
 categories:
   - title: 🚀 New features and enhancements
