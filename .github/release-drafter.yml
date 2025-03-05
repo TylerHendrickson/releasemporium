@@ -5,6 +5,7 @@ version-template: '2023.$MINOR'
 version-resolver:
   default: minor
 prerelease: true
+include-pre-releases: false
 categories:
   - title: 🚀 New features and enhancements
     collapse-after: 10
