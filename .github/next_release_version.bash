@@ -18,6 +18,7 @@ if [[ $1 == 'test' ]]; then
     dotest 'release/0.0' "$next_version_release_year.1"
     dotest 'release/0' "$next_version_release_year.1"
     dotest 'sometag' "$next_version_release_year.1"
+    dotest "release/$next_version_release_year.1" "$next_version_release_year.2"
     dotest "release/$next_version_release_year.19" "$next_version_release_year.20"
     dotest "release/$next_version_release_year.399" "$next_version_release_year.400"
     echo 'Tests complete' >&2
@@ -47,4 +48,6 @@ else
 fi
 
 next_version="$next_version_release_year.$next_version_release_number"
+echo "Next version: $next_version" >&2
+# Output result to stdout
 printf "$next_version"
